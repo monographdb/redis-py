@@ -83,7 +83,6 @@ class TestResponseCallbacks:
         assert r.response_callbacks["ping"] == r.response_callbacks["PING"]
 
 
-# TODO(ZX) customize skip unknown command test
 class TestRedisCommands:
     @pytest.mark.onlynoncluster
     @skip_for_unknown_command()
