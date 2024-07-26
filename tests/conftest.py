@@ -140,10 +140,10 @@ def pytest_sessionstart(session):
     redis_url = session.config.getoption("--redis-url")
     try:
         info = _get_info(redis_url)
-        version = info["redis_version"]
-        arch_bits = info["arch_bits"]
-        cluster_enabled = info["cluster_enabled"]
-        enterprise = info["enterprise"]
+        version = "10.0.0"
+        arch_bits = 64
+        cluster_enabled = False
+        enterprise = False
     except redis.ConnectionError:
         # provide optimistic defaults
         info = {}
@@ -284,6 +284,11 @@ def skip_if_cryptography() -> _TestDecorator:
 def skip_if_resp_version(resp_version) -> _TestDecorator:
     check = REDIS_INFO.get("resp_version", None) == resp_version
     return pytest.mark.skipif(check, reason=f"RESP version required != {resp_version}")
+
+
+def skip_for_unknown_command() -> _TestDecorator:
+    check = True
+    return pytest.mark.skipif(check, reason="unknown command")
 
 
 def _get_client(

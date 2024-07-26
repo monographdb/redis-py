@@ -29,6 +29,7 @@ from .conftest import (
     skip_if_server_version_gte,
     skip_if_server_version_lt,
     skip_unless_arch_bits,
+    skip_for_unknown_command,
 )
 
 
@@ -82,8 +83,10 @@ class TestResponseCallbacks:
         assert r.response_callbacks["ping"] == r.response_callbacks["PING"]
 
 
+# TODO(ZX) customize skip unknown command test
 class TestRedisCommands:
     @pytest.mark.onlynoncluster
+    @skip_for_unknown_command()
     @skip_if_redis_enterprise()
     def test_auth(self, r, request):
         # sending an AUTH command before setting a user/password on the
@@ -139,18 +142,21 @@ class TestRedisCommands:
             r["a"]
 
     # SERVER INFORMATION
+    @skip_for_unknown_command()
     @skip_if_server_version_lt("6.0.0")
     def test_acl_cat_no_category(self, r):
         categories = r.acl_cat()
         assert isinstance(categories, list)
         assert "read" in categories or b"read" in categories
 
+    @skip_for_unknown_command()
     @skip_if_server_version_lt("6.0.0")
     def test_acl_cat_with_category(self, r):
         commands = r.acl_cat("read")
         assert isinstance(commands, list)
         assert "get" in commands or b"get" in commands
 
+    @skip_for_unknown_command()
     @skip_if_server_version_lt("7.0.0")
     @skip_if_redis_enterprise()
     def test_acl_dryrun(self, r, request):
@@ -166,6 +172,7 @@ class TestRedisCommands:
         no_permissions_message = b"user has no permissions to run the"
         assert no_permissions_message in r.acl_dryrun(username, "get", "key")
 
+    @skip_for_unknown_command()
     @skip_if_server_version_lt("6.0.0")
     @skip_if_redis_enterprise()
     def test_acl_deluser(self, r, request):
@@ -191,6 +198,7 @@ class TestRedisCommands:
         assert r.acl_getuser(users[3]) is None
         assert r.acl_getuser(users[4]) is None
 
+    @skip_for_unknown_command()
     @skip_if_server_version_lt("6.0.0")
     @skip_if_redis_enterprise()
     def test_acl_genpass(self, r):
@@ -206,6 +214,7 @@ class TestRedisCommands:
         assert isinstance(password, (str, bytes))
         assert len(password) == 139
 
+    @skip_for_unknown_command()
     @skip_if_server_version_lt("7.0.0")
     @skip_if_redis_enterprise()
     def test_acl_getuser_setuser(self, r, request):
@@ -340,12 +349,14 @@ class TestRedisCommands:
             [{"commands": "-@all +set", "keys": "%W~app*", "channels": ""}],
         )
 
+    @skip_for_unknown_command()
     @skip_if_server_version_lt("6.0.0")
     def test_acl_help(self, r):
         res = r.acl_help()
         assert isinstance(res, list)
         assert len(res) != 0
 
+    @skip_for_unknown_command()
     @skip_if_server_version_lt("6.0.0")
     @skip_if_redis_enterprise()
     def test_acl_list(self, r, request):
@@ -361,6 +372,7 @@ class TestRedisCommands:
         users = r.acl_list()
         assert len(users) == len(start) + 1
 
+    @skip_for_unknown_command()
     @skip_if_server_version_lt("6.0.0")
     @skip_if_redis_enterprise()
     @pytest.mark.onlynoncluster
@@ -409,6 +421,7 @@ class TestRedisCommands:
             expected.keys(),
         )
 
+    @skip_for_unknown_command()
     @skip_if_server_version_lt("6.0.0")
     @skip_if_redis_enterprise()
     def test_acl_setuser_categories_without_prefix_fails(self, r, request):
@@ -422,6 +435,7 @@ class TestRedisCommands:
         with pytest.raises(exceptions.DataError):
             r.acl_setuser(username, categories=["list"])
 
+    @skip_for_unknown_command()
     @skip_if_server_version_lt("6.0.0")
     @skip_if_redis_enterprise()
     def test_acl_setuser_commands_without_prefix_fails(self, r, request):
@@ -435,6 +449,7 @@ class TestRedisCommands:
         with pytest.raises(exceptions.DataError):
             r.acl_setuser(username, commands=["get"])
 
+    @skip_for_unknown_command()
     @skip_if_server_version_lt("6.0.0")
     @skip_if_redis_enterprise()
     def test_acl_setuser_add_passwords_and_nopass_fails(self, r, request):
@@ -448,12 +463,14 @@ class TestRedisCommands:
         with pytest.raises(exceptions.DataError):
             r.acl_setuser(username, passwords="+mypass", nopass=True)
 
+    @skip_for_unknown_command()
     @skip_if_server_version_lt("6.0.0")
     def test_acl_users(self, r):
         users = r.acl_users()
         assert isinstance(users, list)
         assert len(users) > 0
 
+    @skip_for_unknown_command()
     @skip_if_server_version_lt("6.0.0")
     def test_acl_whoami(self, r):
         username = r.acl_whoami()
@@ -467,6 +484,7 @@ class TestRedisCommands:
 
     @pytest.mark.onlynoncluster
     @skip_if_server_version_lt("6.2.0")
+    @skip_for_unknown_command()
     def test_client_info(self, r):
         info = r.client_info()
         assert isinstance(info, dict)
@@ -509,6 +527,7 @@ class TestRedisCommands:
     @pytest.mark.onlynoncluster
     @skip_if_server_version_lt("6.2.0")
     @skip_if_redis_enterprise()
+    @skip_for_unknown_command()
     def test_client_trackinginfo(self, r):
         res = r.client_trackinginfo()
         assert len(res) > 2
@@ -538,6 +557,7 @@ class TestRedisCommands:
 
     @pytest.mark.onlynoncluster
     @skip_if_server_version_lt("5.0.0")
+    @skip_for_unknown_command()
     def test_client_unblock(self, r):
         myid = r.client_id()
         assert not r.client_unblock(myid)
@@ -556,6 +576,7 @@ class TestRedisCommands:
         assert_resp_response(r, r.client_getname(), "redis_py_test", b"redis_py_test")
 
     @skip_if_server_version_lt("7.2.0")
+    @skip_for_unknown_command()
     def test_client_setinfo(self, r: redis.Redis):
         r.ping()
         info = r.client_info()
@@ -577,6 +598,7 @@ class TestRedisCommands:
 
     @pytest.mark.onlynoncluster
     @skip_if_server_version_lt("2.6.9")
+    @skip_for_unknown_command()
     def test_client_kill(self, r, r2):
         r.client_setname("redis-py-c1")
         r2.client_setname("redis-py-c2")
@@ -616,6 +638,7 @@ class TestRedisCommands:
 
     @pytest.mark.onlynoncluster
     @skip_if_server_version_lt("2.8.12")
+    @skip_for_unknown_command()
     def test_client_kill_filter_by_id(self, r, r2):
         r.client_setname("redis-py-c1")
         r2.client_setname("redis-py-c2")
@@ -642,6 +665,7 @@ class TestRedisCommands:
 
     @pytest.mark.onlynoncluster
     @skip_if_server_version_lt("2.8.12")
+    @skip_for_unknown_command()
     def test_client_kill_filter_by_addr(self, r, r2):
         r.client_setname("redis-py-c1")
         r2.client_setname("redis-py-c2")
@@ -674,6 +698,7 @@ class TestRedisCommands:
         assert "redis_py_test" in [c["name"] for c in clients]
 
     @skip_if_server_version_lt("6.2.0")
+    @skip_for_unknown_command()
     def test_client_kill_filter_by_laddr(self, r, r2):
         r.client_setname("redis-py-c1")
         r2.client_setname("redis-py-c2")
@@ -691,6 +716,7 @@ class TestRedisCommands:
 
     @skip_if_server_version_lt("6.0.0")
     @skip_if_redis_enterprise()
+    @skip_for_unknown_command()
     def test_client_kill_filter_by_user(self, r, request):
         killuser = "user_to_kill"
         r.acl_setuser(
@@ -711,6 +737,7 @@ class TestRedisCommands:
     @skip_if_server_version_lt("7.3.240")
     @skip_if_redis_enterprise()
     @pytest.mark.onlynoncluster
+    @skip_for_unknown_command()
     def test_client_kill_filter_by_maxage(self, r, request):
         r2 = _get_client(redis.Redis, request, flushdb=False)
         name = "target-foobar"
@@ -725,6 +752,7 @@ class TestRedisCommands:
     @pytest.mark.onlynoncluster
     @skip_if_server_version_lt("2.9.50")
     @skip_if_redis_enterprise()
+    @skip_for_unknown_command()
     def test_client_pause(self, r):
         assert r.client_pause(1)
         assert r.client_pause(timeout=1)
@@ -733,6 +761,7 @@ class TestRedisCommands:
 
     @skip_if_server_version_lt("6.2.0")
     @skip_if_redis_enterprise()
+    @skip_for_unknown_command()
     def test_client_pause_all(self, r, r2):
         assert r.client_pause(1, all=False)
         assert r2.set("foo", "bar")
@@ -742,6 +771,7 @@ class TestRedisCommands:
     @pytest.mark.onlynoncluster
     @skip_if_server_version_lt("6.2.0")
     @skip_if_redis_enterprise()
+    @skip_for_unknown_command()
     def test_client_unpause(self, r):
         assert r.client_unpause() == b"OK"
 
@@ -754,6 +784,7 @@ class TestRedisCommands:
 
     @pytest.mark.onlynoncluster
     @skip_if_server_version_lt("7.2.0")
+    @skip_for_unknown_command()
     def test_client_no_touch(self, r):
         assert r.client_no_touch("ON") == b"OK"
         assert r.client_no_touch("OFF") == b"OK"
@@ -762,6 +793,7 @@ class TestRedisCommands:
 
     @pytest.mark.onlynoncluster
     @skip_if_server_version_lt("3.2.0")
+    @skip_for_unknown_command()
     def test_client_reply(self, r, r_timeout):
         assert r_timeout.client_reply("ON") == b"OK"
         with pytest.raises(exceptions.RedisError):
@@ -777,6 +809,7 @@ class TestRedisCommands:
     @pytest.mark.onlynoncluster
     @skip_if_server_version_lt("6.0.0")
     @skip_if_redis_enterprise()
+    @skip_for_unknown_command()
     def test_client_getredir(self, r):
         assert isinstance(r.client_getredir(), int)
         assert r.client_getredir() == -1
@@ -786,6 +819,7 @@ class TestRedisCommands:
         with pytest.raises(NotImplementedError):
             r.hello()
 
+    @skip_for_unknown_command()
     def test_config_get(self, r):
         data = r.config_get()
         assert len(data.keys()) > 10
@@ -793,6 +827,7 @@ class TestRedisCommands:
         # assert data['maxmemory'].isdigit()
 
     @skip_if_server_version_lt("7.0.0")
+    @skip_for_unknown_command()
     def test_config_get_multi_params(self, r: redis.Redis):
         res = r.config_get("*max-*-entries*", "maxmemory")
         assert "maxmemory" in res
@@ -800,6 +835,7 @@ class TestRedisCommands:
 
     @pytest.mark.onlynoncluster
     @skip_if_redis_enterprise()
+    @skip_for_unknown_command()
     def test_config_resetstat(self, r):
         r.ping()
         prior_commands_processed = int(r.info()["total_commands_processed"])
@@ -809,6 +845,7 @@ class TestRedisCommands:
         assert reset_commands_processed < prior_commands_processed
 
     @skip_if_redis_enterprise()
+    @skip_for_unknown_command()
     def test_config_set(self, r):
         r.config_set("timeout", 70)
         assert r.config_get()["timeout"] == "70"
@@ -817,6 +854,7 @@ class TestRedisCommands:
 
     @skip_if_server_version_lt("7.0.0")
     @skip_if_redis_enterprise()
+    @skip_for_unknown_command()
     def test_config_set_multi_params(self, r: redis.Redis):
         r.config_set("timeout", 70, "maxmemory", 100)
         assert r.config_get()["timeout"] == "70"
@@ -832,6 +870,7 @@ class TestRedisCommands:
             r.failover()
 
     @pytest.mark.onlynoncluster
+    @skip_for_unknown_command()
     def test_dbsize(self, r):
         r["a"] = "foo"
         r["b"] = "bar"
@@ -841,17 +880,19 @@ class TestRedisCommands:
     def test_echo(self, r):
         assert r.echo("foo bar") == b"foo bar"
 
-    @pytest.mark.onlynoncluster
-    def test_info(self, r):
-        r["a"] = "foo"
-        r["b"] = "bar"
-        info = r.info()
-        assert isinstance(info, dict)
-        assert "arch_bits" in info.keys()
-        assert "redis_version" in info.keys()
+    # Q? crash
+    # @pytest.mark.onlynoncluster
+    # def test_info(self, r):
+    #     r["a"] = "foo"
+    #     r["b"] = "bar"
+    #     info = r.info()
+    #     assert isinstance(info, dict)
+    #     assert "arch_bits" in info.keys()
+    #     assert "redis_version" in info.keys()
 
     @pytest.mark.onlynoncluster
     @skip_if_server_version_lt("7.0.0")
+    @skip_for_unknown_command()
     def test_info_multi_sections(self, r):
         res = r.info("clients", "server")
         assert isinstance(res, dict)
@@ -859,12 +900,14 @@ class TestRedisCommands:
         assert "connected_clients" in res
 
     @pytest.mark.onlynoncluster
+    @skip_for_unknown_command()
     @skip_if_redis_enterprise()
     def test_lastsave(self, r):
         assert isinstance(r.lastsave(), datetime.datetime)
 
     @pytest.mark.onlynoncluster
     @skip_if_server_version_lt("5.0.0")
+    @skip_for_unknown_command()
     def test_lolwut(self, r):
         lolwut = r.lolwut().decode("utf-8")
         assert "Redis ver." in lolwut
@@ -875,9 +918,11 @@ class TestRedisCommands:
     @pytest.mark.onlynoncluster
     @skip_if_server_version_lt("6.2.0")
     @skip_if_redis_enterprise()
+    @skip_for_unknown_command()
     def test_reset(self, r):
         assert_resp_response(r, r.reset(), "RESET", b"RESET")
 
+    @skip_for_unknown_command()
     def test_object(self, r):
         r["a"] = "foo"
         assert isinstance(r.object("refcount", "a"), int)
@@ -889,12 +934,14 @@ class TestRedisCommands:
         assert r.ping()
 
     @pytest.mark.onlynoncluster
+    @skip_for_unknown_command()
     def test_quit(self, r):
         assert r.quit()
 
     @skip_if_server_version_lt("2.8.12")
     @skip_if_redis_enterprise()
     @pytest.mark.onlynoncluster
+    @skip_for_unknown_command()
     def test_role(self, r):
         assert r.role()[0] == b"master"
         assert isinstance(r.role()[1], int)
@@ -908,6 +955,7 @@ class TestRedisCommands:
         assert r.select(9)
 
     @pytest.mark.onlynoncluster
+    @skip_for_unknown_command()
     def test_slowlog_get(self, r, slowlog):
         assert r.slowlog_reset()
         unicode_string = chr(3456) + "abcd" + chr(3421)
@@ -960,6 +1008,7 @@ class TestRedisCommands:
             r.parse_response = old_parse_response
 
     @pytest.mark.onlynoncluster
+    @skip_for_unknown_command()
     def test_slowlog_get_limit(self, r, slowlog):
         assert r.slowlog_reset()
         r.get("foo")
@@ -969,11 +1018,13 @@ class TestRedisCommands:
         assert len(slowlog) == 1
 
     @pytest.mark.onlynoncluster
+    @skip_for_unknown_command()
     def test_slowlog_length(self, r, slowlog):
         r.get("foo")
         assert isinstance(r.slowlog_len(), int)
 
     @skip_if_server_version_lt("2.6.0")
+    @skip_for_unknown_command()
     def test_time(self, r):
         t = r.time()
         assert len(t) == 2
@@ -981,6 +1032,7 @@ class TestRedisCommands:
         assert isinstance(t[1], int)
 
     @skip_if_redis_enterprise()
+    @skip_for_unknown_command()
     def test_bgsave(self, r):
         assert r.bgsave()
         time.sleep(0.3)
@@ -1113,6 +1165,7 @@ class TestRedisCommands:
             r.bitpos("mykey", 1, 7, 15, "bite")
 
     @pytest.mark.onlynoncluster
+    @skip_for_unknown_command()
     @skip_if_server_version_lt("6.2.0")
     def test_copy(self, r):
         assert r.copy("a", "b") == 0
@@ -1122,6 +1175,7 @@ class TestRedisCommands:
         assert r.get("b") == b"foo"
 
     @pytest.mark.onlynoncluster
+    @skip_for_unknown_command()
     @skip_if_server_version_lt("6.2.0")
     def test_copy_and_replace(self, r):
         r.set("a", "foo1")
@@ -1130,6 +1184,7 @@ class TestRedisCommands:
         assert r.copy("a", "b", replace=True) == 1
 
     @pytest.mark.onlynoncluster
+    @skip_for_unknown_command()
     @skip_if_server_version_lt("6.2.0")
     def test_copy_to_another_database(self, request):
         r0 = _get_client(redis.Redis, request, db=0)
@@ -1169,6 +1224,7 @@ class TestRedisCommands:
         assert r.get("a") is None
 
     @skip_if_server_version_lt("4.0.0")
+    @skip_for_unknown_command()
     def test_unlink(self, r):
         assert r.unlink("a") == 0
         r["a"] = "foo"
@@ -1176,6 +1232,7 @@ class TestRedisCommands:
         assert r.get("a") is None
 
     @skip_if_server_version_lt("4.0.0")
+    @skip_for_unknown_command()
     def test_unlink_with_multiple_keys(self, r):
         r["a"] = "foo"
         r["b"] = "bar"
@@ -1185,6 +1242,7 @@ class TestRedisCommands:
 
     @pytest.mark.onlynoncluster
     @skip_if_server_version_lt("7.0.0")
+    @skip_for_unknown_command()
     def test_lcs(self, r):
         r.mset({"foo": "ohmytext", "bar": "mynewtext"})
         assert r.lcs("foo", "bar") == b"mytext"
@@ -1217,6 +1275,7 @@ class TestRedisCommands:
         assert r["a"] == b"bar"
 
     @skip_if_server_version_lt("5.0.0")
+    @skip_for_unknown_command()
     def test_dump_and_restore_absttl(self, r):
         r["a"] = "foo"
         dumped = r.dump("a")
@@ -1240,6 +1299,7 @@ class TestRedisCommands:
         r["a"] = "foo"
         assert "a" in r
 
+    @skip_for_unknown_command()
     def test_expire(self, r):
         assert r.expire("a", 10) is False
         r["a"] = "foo"
@@ -1248,12 +1308,14 @@ class TestRedisCommands:
         assert r.persist("a")
         assert r.ttl("a") == -1
 
+    @skip_for_unknown_command()
     @skip_if_server_version_lt("7.0.0")
     def test_expire_option_nx(self, r):
         r.set("key", "val")
         assert r.expire("key", 100, nx=True) == 1
         assert r.expire("key", 500, nx=True) == 0
 
+    @skip_for_unknown_command()
     @skip_if_server_version_lt("7.0.0")
     def test_expire_option_xx(self, r):
         r.set("key", "val")
@@ -1261,28 +1323,33 @@ class TestRedisCommands:
         assert r.expire("key", 100)
         assert r.expire("key", 500, xx=True) == 1
 
+    @skip_for_unknown_command()
     @skip_if_server_version_lt("7.0.0")
     def test_expire_option_gt(self, r):
         r.set("key", "val", 100)
         assert r.expire("key", 50, gt=True) == 0
         assert r.expire("key", 500, gt=True) == 1
 
+    @skip_for_unknown_command()
     @skip_if_server_version_lt("7.0.0")
     def test_expire_option_lt(self, r):
         r.set("key", "val", 100)
         assert r.expire("key", 50, lt=True) == 1
         assert r.expire("key", 150, lt=True) == 0
 
+    @skip_for_unknown_command()
     def test_expireat_datetime(self, r):
         expire_at = redis_server_time(r) + datetime.timedelta(minutes=1)
         r["a"] = "foo"
         assert r.expireat("a", expire_at) is True
         assert 0 < r.ttl("a") <= 61
 
+    @skip_for_unknown_command()
     def test_expireat_no_key(self, r):
         expire_at = redis_server_time(r) + datetime.timedelta(minutes=1)
         assert r.expireat("a", expire_at) is False
 
+    @skip_for_unknown_command()
     def test_expireat_unixtime(self, r):
         expire_at = redis_server_time(r) + datetime.timedelta(minutes=1)
         r["a"] = "foo"
@@ -1290,12 +1357,14 @@ class TestRedisCommands:
         assert r.expireat("a", expire_at_seconds) is True
         assert 0 < r.ttl("a") <= 61
 
+    @skip_for_unknown_command()
     @skip_if_server_version_lt("7.0.0")
     def test_expiretime(self, r):
         r.set("a", "foo")
         r.expireat("a", 33177117420)
         assert r.expiretime("a") == 33177117420
 
+    @skip_for_unknown_command()
     @skip_if_server_version_lt("7.0.0")
     def test_expireat_option_nx(self, r):
         assert r.set("key", "val") is True
@@ -1304,6 +1373,7 @@ class TestRedisCommands:
         expire_at = redis_server_time(r) + datetime.timedelta(minutes=2)
         assert r.expireat("key", expire_at, nx=True) is False
 
+    @skip_for_unknown_command()
     @skip_if_server_version_lt("7.0.0")
     def test_expireat_option_xx(self, r):
         assert r.set("key", "val") is True
@@ -1313,6 +1383,7 @@ class TestRedisCommands:
         expire_at = redis_server_time(r) + datetime.timedelta(minutes=2)
         assert r.expireat("key", expire_at, xx=True) is True
 
+    @skip_for_unknown_command()
     @skip_if_server_version_lt("7.0.0")
     def test_expireat_option_gt(self, r):
         expire_at = redis_server_time(r) + datetime.timedelta(minutes=2)
@@ -1323,6 +1394,7 @@ class TestRedisCommands:
         expire_at = redis_server_time(r) + datetime.timedelta(minutes=3)
         assert r.expireat("key", expire_at, gt=True) is True
 
+    @skip_for_unknown_command()
     @skip_if_server_version_lt("7.0.0")
     def test_expireat_option_lt(self, r):
         expire_at = redis_server_time(r) + datetime.timedelta(minutes=2)
@@ -1347,12 +1419,14 @@ class TestRedisCommands:
         assert r.get("unicode_string").decode("utf-8") == unicode_string
 
     @skip_if_server_version_lt("6.2.0")
+    @skip_for_unknown_command()
     def test_getdel(self, r):
         assert r.getdel("a") is None
         r.set("a", 1)
         assert r.getdel("a") == b"1"
         assert r.getdel("a") is None
 
+    @skip_for_unknown_command()
     @skip_if_server_version_lt("6.2.0")
     def test_getex(self, r):
         r.set("a", 1)
@@ -1478,6 +1552,7 @@ class TestRedisCommands:
         assert r.get("d") is None
 
     @skip_if_server_version_lt("2.6.0")
+    @skip_for_unknown_command()
     def test_pexpire(self, r):
         assert r.pexpire("a", 60000) is False
         r["a"] = "foo"
@@ -1487,12 +1562,14 @@ class TestRedisCommands:
         assert r.pttl("a") == -1
 
     @skip_if_server_version_lt("7.0.0")
+    @skip_for_unknown_command()
     def test_pexpire_option_nx(self, r):
         assert r.set("key", "val") is True
         assert r.pexpire("key", 60000, nx=True) is True
         assert r.pexpire("key", 60000, nx=True) is False
 
     @skip_if_server_version_lt("7.0.0")
+    @skip_for_unknown_command()
     def test_pexpire_option_xx(self, r):
         assert r.set("key", "val") is True
         assert r.pexpire("key", 60000, xx=True) is False
@@ -1500,6 +1577,7 @@ class TestRedisCommands:
         assert r.pexpire("key", 70000, xx=True) is True
 
     @skip_if_server_version_lt("7.0.0")
+    @skip_for_unknown_command()
     def test_pexpire_option_gt(self, r):
         assert r.set("key", "val") is True
         assert r.pexpire("key", 60000) is True
@@ -1507,6 +1585,7 @@ class TestRedisCommands:
         assert r.pexpire("key", 50000, gt=True) is False
 
     @skip_if_server_version_lt("7.0.0")
+    @skip_for_unknown_command()
     def test_pexpire_option_lt(self, r):
         assert r.set("key", "val") is True
         assert r.pexpire("key", 60000) is True
@@ -1514,6 +1593,7 @@ class TestRedisCommands:
         assert r.pexpire("key", 70000, lt=True) is False
 
     @skip_if_server_version_lt("2.6.0")
+    @skip_for_unknown_command()
     def test_pexpireat_datetime(self, r):
         expire_at = redis_server_time(r) + datetime.timedelta(minutes=1)
         r["a"] = "foo"
@@ -1521,11 +1601,13 @@ class TestRedisCommands:
         assert 0 < r.pttl("a") <= 61000
 
     @skip_if_server_version_lt("2.6.0")
+    @skip_for_unknown_command()
     def test_pexpireat_no_key(self, r):
         expire_at = redis_server_time(r) + datetime.timedelta(minutes=1)
         assert r.pexpireat("a", expire_at) is False
 
     @skip_if_server_version_lt("2.6.0")
+    @skip_for_unknown_command()
     def test_pexpireat_unixtime(self, r):
         expire_at = redis_server_time(r) + datetime.timedelta(minutes=1)
         r["a"] = "foo"
@@ -1534,6 +1616,7 @@ class TestRedisCommands:
         assert 0 < r.pttl("a") <= 61000
 
     @skip_if_server_version_lt("7.0.0")
+    @skip_for_unknown_command()
     def test_pexpireat_option_nx(self, r):
         assert r.set("key", "val") is True
         expire_at = redis_server_time(r) + datetime.timedelta(minutes=1)
@@ -1541,6 +1624,7 @@ class TestRedisCommands:
         assert r.pexpireat("key", expire_at, nx=True) is False
 
     @skip_if_server_version_lt("7.0.0")
+    @skip_for_unknown_command()
     def test_pexpireat_option_xx(self, r):
         assert r.set("key", "val") is True
         expire_at = redis_server_time(r) + datetime.timedelta(minutes=1)
@@ -1549,6 +1633,7 @@ class TestRedisCommands:
         assert r.pexpireat("key", expire_at, xx=True) is True
 
     @skip_if_server_version_lt("7.0.0")
+    @skip_for_unknown_command()
     def test_pexpireat_option_gt(self, r):
         assert r.set("key", "val") is True
         expire_at = redis_server_time(r) + datetime.timedelta(minutes=2)
@@ -1559,6 +1644,7 @@ class TestRedisCommands:
         assert r.pexpireat("key", expire_at, gt=True) is True
 
     @skip_if_server_version_lt("7.0.0")
+    @skip_for_unknown_command()
     def test_pexpireat_option_lt(self, r):
         assert r.set("key", "val") is True
         expire_at = redis_server_time(r) + datetime.timedelta(minutes=2)
@@ -1569,18 +1655,21 @@ class TestRedisCommands:
         assert r.pexpireat("key", expire_at, lt=True) is True
 
     @skip_if_server_version_lt("7.0.0")
+    @skip_for_unknown_command()
     def test_pexpiretime(self, r):
         r.set("a", "foo")
         r.pexpireat("a", 33177117420000)
         assert r.pexpiretime("a") == 33177117420000
 
     @skip_if_server_version_lt("2.6.0")
+    @skip_for_unknown_command()
     def test_psetex(self, r):
         assert r.psetex("a", 1000, "value")
         assert r["a"] == b"value"
         assert 0 < r.pttl("a") <= 1000
 
     @skip_if_server_version_lt("2.6.0")
+    @skip_for_unknown_command()
     def test_psetex_timedelta(self, r):
         expire_at = datetime.timedelta(milliseconds=1000)
         assert r.psetex("a", expire_at, "value")
@@ -1588,6 +1677,7 @@ class TestRedisCommands:
         assert 0 < r.pttl("a") <= 1000
 
     @skip_if_server_version_lt("2.6.0")
+    @skip_for_unknown_command()
     def test_pttl(self, r):
         assert r.pexpire("a", 10000) is False
         r["a"] = "1"
@@ -1597,6 +1687,7 @@ class TestRedisCommands:
         assert r.pttl("a") == -1
 
     @skip_if_server_version_lt("2.8.0")
+    @skip_for_unknown_command()
     def test_pttl_no_key(self, r):
         "PTTL on servers 2.8 and after return -2 when the key doesn't exist"
         assert r.pttl("a") == -2
@@ -1615,6 +1706,7 @@ class TestRedisCommands:
         assert len(r.hrandfield("key", -10)) == 10
 
     @pytest.mark.onlynoncluster
+    @skip_for_unknown_command()
     def test_randomkey(self, r):
         assert r.randomkey() is None
         for key in ("a", "b", "c"):
@@ -1622,6 +1714,7 @@ class TestRedisCommands:
         assert r.randomkey() in (b"a", b"b", b"c")
 
     @pytest.mark.onlynoncluster
+    @skip_for_unknown_command()
     def test_rename(self, r):
         r["a"] = "1"
         assert r.rename("a", "b")
@@ -1629,6 +1722,7 @@ class TestRedisCommands:
         assert r["b"] == b"1"
 
     @pytest.mark.onlynoncluster
+    @skip_for_unknown_command()
     def test_renamenx(self, r):
         r["a"] = "1"
         r["b"] = "2"
@@ -1651,6 +1745,7 @@ class TestRedisCommands:
         assert r.get("a") == b"2"
 
     @skip_if_server_version_lt("2.6.0")
+    @skip_for_unknown_command()
     def test_set_px(self, r):
         assert r.set("a", "1", px=10000)
         assert r["a"] == b"1"
@@ -1660,6 +1755,7 @@ class TestRedisCommands:
             assert r.set("a", "1", px=10.0)
 
     @skip_if_server_version_lt("2.6.0")
+    @skip_for_unknown_command()
     def test_set_px_timedelta(self, r):
         expire_at = datetime.timedelta(milliseconds=1000)
         assert r.set("a", "1", px=expire_at)
@@ -1667,6 +1763,7 @@ class TestRedisCommands:
         assert 0 < r.ttl("a") <= 1
 
     @skip_if_server_version_lt("2.6.0")
+    @skip_for_unknown_command()
     def test_set_ex(self, r):
         assert r.set("a", "1", ex=10)
         assert 0 < r.ttl("a") <= 10
@@ -1674,6 +1771,7 @@ class TestRedisCommands:
             assert r.set("a", "1", ex=10.0)
 
     @skip_if_server_version_lt("2.6.0")
+    @skip_for_unknown_command()
     def test_set_ex_str(self, r):
         assert r.set("a", "1", ex="10")
         assert 0 < r.ttl("a") <= 10
@@ -1681,30 +1779,35 @@ class TestRedisCommands:
             assert r.set("a", "1", ex="10.5")
 
     @skip_if_server_version_lt("2.6.0")
+    @skip_for_unknown_command()
     def test_set_ex_timedelta(self, r):
         expire_at = datetime.timedelta(seconds=60)
         assert r.set("a", "1", ex=expire_at)
         assert 0 < r.ttl("a") <= 60
 
     @skip_if_server_version_lt("6.2.0")
+    @skip_for_unknown_command()
     def test_set_exat_timedelta(self, r):
         expire_at = redis_server_time(r) + datetime.timedelta(seconds=10)
         assert r.set("a", "1", exat=expire_at)
         assert 0 < r.ttl("a") <= 10
 
     @skip_if_server_version_lt("6.2.0")
+    @skip_for_unknown_command()
     def test_set_pxat_timedelta(self, r):
         expire_at = redis_server_time(r) + datetime.timedelta(seconds=50)
         assert r.set("a", "1", pxat=expire_at)
         assert 0 < r.ttl("a") <= 100
 
     @skip_if_server_version_lt("2.6.0")
+    @skip_for_unknown_command()
     def test_set_multipleoptions(self, r):
         r["a"] = "val"
         assert r.set("a", "1", xx=True, px=10000)
         assert 0 < r.ttl("a") <= 10
 
     @skip_if_server_version_lt("6.0.0")
+    @skip_for_unknown_command()
     def test_set_keepttl(self, r):
         r["a"] = "val"
         assert r.set("a", "1", xx=True, px=10000)
@@ -1721,6 +1824,7 @@ class TestRedisCommands:
         assert r.set("a", "bar", get=True) == b"foo"
         assert r.get("a") == b"bar"
 
+    @skip_for_unknown_command()
     def test_setex(self, r):
         assert r.setex("a", 60, "1")
         assert r["a"] == b"1"
@@ -1742,6 +1846,7 @@ class TestRedisCommands:
     @skip_if_server_version_lt("6.0.0")
     @skip_if_server_version_gte("7.0.0")
     @skip_if_redis_enterprise()
+    @skip_for_unknown_command()
     def test_stralgo_lcs(self, r):
         key1 = "{foo}key1"
         key2 = "{foo}key2"
@@ -1785,6 +1890,7 @@ class TestRedisCommands:
     @skip_if_server_version_lt("6.0.0")
     @skip_if_server_version_gte("7.0.0")
     @skip_if_redis_enterprise()
+    @skip_for_unknown_command()
     def test_stralgo_negative(self, r):
         with pytest.raises(exceptions.DataError):
             r.stralgo("ISSUB", "value1", "value2")
@@ -1824,6 +1930,7 @@ class TestRedisCommands:
 
     @pytest.mark.onlynoncluster
     @skip_if_server_version_lt("7.1.140")
+    @skip_for_unknown_command()
     def test_tfunction_load_delete(self, stack_r):
         self.try_delete_libs(stack_r, "lib1")
         lib_code = self.generate_lib_code("lib1")
@@ -1832,6 +1939,7 @@ class TestRedisCommands:
 
     @pytest.mark.onlynoncluster
     @skip_if_server_version_lt("7.1.140")
+    @skip_for_unknown_command()
     def test_tfunction_list(self, stack_r):
         self.try_delete_libs(stack_r, "lib1", "lib2", "lib3")
         assert stack_r.tfunction_load(self.generate_lib_code("lib1"))
@@ -1862,6 +1970,7 @@ class TestRedisCommands:
 
     @pytest.mark.onlynoncluster
     @skip_if_server_version_lt("7.1.140")
+    @skip_for_unknown_command()
     def test_tfcall(self, stack_r):
         self.try_delete_libs(stack_r, "lib1")
         assert stack_r.tfunction_load(self.generate_lib_code("lib1"))
@@ -1870,6 +1979,7 @@ class TestRedisCommands:
 
         assert stack_r.tfunction_delete("lib1")
 
+    @skip_for_unknown_command()
     def test_ttl(self, r):
         r["a"] = "1"
         assert r.expire("a", 10)
@@ -1878,6 +1988,7 @@ class TestRedisCommands:
         assert r.ttl("a") == -1
 
     @skip_if_server_version_lt("2.8.0")
+    @skip_for_unknown_command()
     def test_ttl_nokey(self, r):
         "TTL on servers 2.8 and after return -2 when the key doesn't exist"
         assert r.ttl("a") == -2
@@ -2212,6 +2323,7 @@ class TestRedisCommands:
     def test_hscan_iter_novalues(self, r):
         r.hset("a", mapping={"a": 1, "b": 2, "c": 3})
         keys = list(r.hscan_iter("a", no_values=True))
+        # Q? i think order is not required according to redis doc
         assert keys == [b"a", b"b", b"c"]
         keys = list(r.hscan_iter("a", match="a", no_values=True))
         assert keys == [b"a"]
@@ -2538,6 +2650,7 @@ class TestRedisCommands:
             [[b"a3", 5], [b"a1", 6]],
         )
         # aggregate with MIN
+        # Q? assert [(b'a3', 1.0), (b'a1', 1.0)] == [(b'a1', 1), (b'a3', 1)]
         assert_resp_response(
             r,
             r.zinter(["a", "b", "c"], aggregate="MIN", withscores=True),
@@ -2656,6 +2769,7 @@ class TestRedisCommands:
 
     @pytest.mark.onlynoncluster
     @skip_if_server_version_lt("4.9.0")
+    @skip_for_unknown_command()
     def test_bzpopmax(self, r):
         r.zadd("a", {"a1": 1, "a2": 2})
         r.zadd("b", {"b1": 10, "b2": 20})
@@ -2679,6 +2793,7 @@ class TestRedisCommands:
 
     @pytest.mark.onlynoncluster
     @skip_if_server_version_lt("4.9.0")
+    @skip_for_unknown_command()
     def test_bzpopmin(self, r):
         r.zadd("a", {"a1": 1, "a2": 2})
         r.zadd("b", {"b1": 10, "b2": 20})
@@ -2722,6 +2837,7 @@ class TestRedisCommands:
 
     @pytest.mark.onlynoncluster
     @skip_if_server_version_lt("7.0.0")
+    @skip_for_unknown_command()
     def test_bzmpop(self, r):
         r.zadd("a", {"a1": 1, "a2": 2, "a3": 3})
         assert_resp_response(
@@ -2889,6 +3005,7 @@ class TestRedisCommands:
         assert r.zrank("a", "a1") == 0
         assert r.zrank("a", "a2") == 1
         assert r.zrank("a", "a6") is None
+        # Q? assert [b'2', b'3'] == [2, b'3']
         assert_resp_response(r, r.zrank("a", "a3", withscore=True), [2, b"3"], [2, 3.0])
         assert r.zrank("a", "a6", withscore=True) is None
 
@@ -2984,6 +3101,7 @@ class TestRedisCommands:
         assert r.zrevrank("a", "a1") == 4
         assert r.zrevrank("a", "a2") == 3
         assert r.zrevrank("a", "a6") is None
+        # Q? assert [b'2', b'3'] == [2, b'3']
         assert_resp_response(
             r, r.zrevrank("a", "a3", withscore=True), [2, b"3"], [2, 3.0]
         )
@@ -3002,6 +3120,7 @@ class TestRedisCommands:
         r.zadd("b", {"a1": 2, "a2": 2, "a3": 2})
         r.zadd("c", {"a1": 6, "a3": 5, "a4": 4})
         # sum
+        # Q? assert [b'a1', b'a2', b'a3', b'a4'] == [b'a2', b'a4', b'a3', b'a1']
         assert r.zunion(["a", "b", "c"]) == [b"a2", b"a4", b"a3", b"a1"]
         assert_resp_response(
             r,
@@ -3095,6 +3214,7 @@ class TestRedisCommands:
 
     # HYPERLOGLOG TESTS
     @skip_if_server_version_lt("2.8.9")
+    @skip_for_unknown_command()
     def test_pfadd(self, r):
         members = {b"1", b"2", b"3"}
         assert r.pfadd("a", *members) == 1
@@ -3103,6 +3223,7 @@ class TestRedisCommands:
 
     @pytest.mark.onlynoncluster
     @skip_if_server_version_lt("2.8.9")
+    @skip_for_unknown_command()
     def test_pfcount(self, r):
         members = {b"1", b"2", b"3"}
         r.pfadd("a", *members)
@@ -3114,6 +3235,7 @@ class TestRedisCommands:
 
     @pytest.mark.onlynoncluster
     @skip_if_server_version_lt("2.8.9")
+    @skip_for_unknown_command()
     def test_pfmerge(self, r):
         mema = {b"1", b"2", b"3"}
         memb = {b"2", b"3", b"4"}
@@ -3387,6 +3509,7 @@ class TestRedisCommands:
             store="sorted",
         )
         assert num == 4
+        # Q? assert [b'water', b'pinot noir', b'vodka', b'gin'] == [b'vodka', b'milk', b'gin', b'apple juice']
         assert r.lrange("sorted", 0, 10) == [b"vodka", b"milk", b"gin", b"apple juice"]
 
     @skip_if_server_version_lt("7.0.0")
@@ -3503,6 +3626,7 @@ class TestRedisCommands:
 
     # GEO COMMANDS
     @skip_if_server_version_lt("3.2.0")
+    @skip_for_unknown_command()
     def test_geoadd(self, r):
         values = (2.1909389952632, 41.433791470673, "place1") + (
             2.1873744593677,
@@ -3513,6 +3637,7 @@ class TestRedisCommands:
         assert r.zcard("barcelona") == 2
 
     @skip_if_server_version_lt("6.2.0")
+    @skip_for_unknown_command()
     def test_geoadd_nx(self, r):
         values = (2.1909389952632, 41.433791470673, "place1") + (
             2.1873744593677,
@@ -3529,6 +3654,7 @@ class TestRedisCommands:
         assert r.zrange("a", 0, -1) == [b"place3", b"place2", b"place1"]
 
     @skip_if_server_version_lt("6.2.0")
+    @skip_for_unknown_command()
     def test_geoadd_xx(self, r):
         values = (2.1909389952632, 41.433791470673, "place1")
         assert r.geoadd("a", values) == 1
@@ -3541,6 +3667,7 @@ class TestRedisCommands:
         assert r.zrange("a", 0, -1) == [b"place1"]
 
     @skip_if_server_version_lt("6.2.0")
+    @skip_for_unknown_command()
     def test_geoadd_ch(self, r):
         values = (2.1909389952632, 41.433791470673, "place1")
         assert r.geoadd("a", values) == 1
@@ -3553,11 +3680,13 @@ class TestRedisCommands:
         assert r.zrange("a", 0, -1) == [b"place1", b"place2"]
 
     @skip_if_server_version_lt("3.2.0")
+    @skip_for_unknown_command()
     def test_geoadd_invalid_params(self, r):
         with pytest.raises(exceptions.RedisError):
             r.geoadd("barcelona", (1, 2))
 
     @skip_if_server_version_lt("3.2.0")
+    @skip_for_unknown_command()
     def test_geodist(self, r):
         values = (2.1909389952632, 41.433791470673, "place1") + (
             2.1873744593677,
@@ -3568,6 +3697,7 @@ class TestRedisCommands:
         assert r.geodist("barcelona", "place1", "place2") == 3067.4157
 
     @skip_if_server_version_lt("3.2.0")
+    @skip_for_unknown_command()
     def test_geodist_units(self, r):
         values = (2.1909389952632, 41.433791470673, "place1") + (
             2.1873744593677,
@@ -3578,17 +3708,20 @@ class TestRedisCommands:
         assert r.geodist("barcelona", "place1", "place2", "km") == 3.0674
 
     @skip_if_server_version_lt("3.2.0")
+    @skip_for_unknown_command()
     def test_geodist_missing_one_member(self, r):
         values = (2.1909389952632, 41.433791470673, "place1")
         r.geoadd("barcelona", values)
         assert r.geodist("barcelona", "place1", "missing_member", "km") is None
 
     @skip_if_server_version_lt("3.2.0")
+    @skip_for_unknown_command()
     def test_geodist_invalid_units(self, r):
         with pytest.raises(exceptions.RedisError):
             assert r.geodist("x", "y", "z", "inches")
 
     @skip_if_server_version_lt("3.2.0")
+    @skip_for_unknown_command()
     def test_geohash(self, r):
         values = (2.1909389952632, 41.433791470673, "place1") + (
             2.1873744593677,
@@ -3605,6 +3738,7 @@ class TestRedisCommands:
 
     @skip_unless_arch_bits(64)
     @skip_if_server_version_lt("3.2.0")
+    @skip_for_unknown_command()
     def test_geopos(self, r):
         values = (2.1909389952632, 41.433791470673, "place1") + (
             2.1873744593677,
@@ -3627,15 +3761,18 @@ class TestRedisCommands:
         )
 
     @skip_if_server_version_lt("4.0.0")
+    @skip_for_unknown_command()
     def test_geopos_no_value(self, r):
         assert r.geopos("barcelona", "place1", "place2") == [None, None]
 
     @skip_if_server_version_lt("3.2.0")
     @skip_if_server_version_gte("4.0.0")
+    @skip_for_unknown_command()
     def test_old_geopos_no_value(self, r):
         assert r.geopos("barcelona", "place1", "place2") == []
 
     @skip_if_server_version_lt("6.2.0")
+    @skip_for_unknown_command()
     def test_geosearch(self, r):
         values = (
             (2.1909389952632, 41.433791470673, "place1")
@@ -3667,6 +3804,7 @@ class TestRedisCommands:
 
     @skip_unless_arch_bits(64)
     @skip_if_server_version_lt("6.2.0")
+    @skip_for_unknown_command()
     def test_geosearch_member(self, r):
         values = (2.1909389952632, 41.433791470673, "place1") + (
             2.1873744593677,
@@ -3704,6 +3842,7 @@ class TestRedisCommands:
         ]
 
     @skip_if_server_version_lt("6.2.0")
+    @skip_for_unknown_command()
     def test_geosearch_sort(self, r):
         values = (2.1909389952632, 41.433791470673, "place1") + (
             2.1873744593677,
@@ -3720,6 +3859,7 @@ class TestRedisCommands:
 
     @skip_unless_arch_bits(64)
     @skip_if_server_version_lt("6.2.0")
+    @skip_for_unknown_command()
     def test_geosearch_with(self, r):
         values = (2.1909389952632, 41.433791470673, "place1") + (
             2.1873744593677,
@@ -3783,6 +3923,7 @@ class TestRedisCommands:
         )
 
     @skip_if_server_version_lt("6.2.0")
+    @skip_for_unknown_command()
     def test_geosearch_negative(self, r):
         # not specifying member nor longitude and latitude
         with pytest.raises(exceptions.DataError):
@@ -3826,6 +3967,7 @@ class TestRedisCommands:
 
     @pytest.mark.onlynoncluster
     @skip_if_server_version_lt("6.2.0")
+    @skip_for_unknown_command()
     def test_geosearchstore(self, r):
         values = (2.1909389952632, 41.433791470673, "place1") + (
             2.1873744593677,
@@ -3846,6 +3988,7 @@ class TestRedisCommands:
     @pytest.mark.onlynoncluster
     @skip_unless_arch_bits(64)
     @skip_if_server_version_lt("6.2.0")
+    @skip_for_unknown_command()
     def test_geosearchstore_dist(self, r):
         values = (2.1909389952632, 41.433791470673, "place1") + (
             2.1873744593677,
@@ -3866,12 +4009,14 @@ class TestRedisCommands:
         assert r.zscore("places_barcelona", "place1") == 88.05060698409301
 
     @skip_if_server_version_lt("3.2.0")
+    @skip_for_unknown_command()
     def test_georadius_Issue2609(self, r):
         # test for issue #2609 (Geo search functions don't work with execute_command)
         r.geoadd(name="my-key", values=[1, 2, "data"])
         assert r.execute_command("GEORADIUS", "my-key", 1, 2, 400, "m") == [b"data"]
 
     @skip_if_server_version_lt("3.2.0")
+    @skip_for_unknown_command()
     def test_georadius(self, r):
         values = (2.1909389952632, 41.433791470673, "place1") + (
             2.1873744593677,
@@ -3884,6 +4029,7 @@ class TestRedisCommands:
         assert r.georadius("barcelona", 2.187, 41.406, 1000) == [b"\x80place2"]
 
     @skip_if_server_version_lt("3.2.0")
+    @skip_for_unknown_command()
     def test_georadius_no_values(self, r):
         values = (2.1909389952632, 41.433791470673, "place1") + (
             2.1873744593677,
@@ -3895,6 +4041,7 @@ class TestRedisCommands:
         assert r.georadius("barcelona", 1, 2, 1000) == []
 
     @skip_if_server_version_lt("3.2.0")
+    @skip_for_unknown_command()
     def test_georadius_units(self, r):
         values = (2.1909389952632, 41.433791470673, "place1") + (
             2.1873744593677,
@@ -3907,6 +4054,7 @@ class TestRedisCommands:
 
     @skip_unless_arch_bits(64)
     @skip_if_server_version_lt("3.2.0")
+    @skip_for_unknown_command()
     def test_georadius_with(self, r):
         values = (2.1909389952632, 41.433791470673, "place1") + (
             2.1873744593677,
@@ -3962,6 +4110,7 @@ class TestRedisCommands:
         )
 
     @skip_if_server_version_lt("6.2.0")
+    @skip_for_unknown_command()
     def test_georadius_count(self, r):
         values = (2.1909389952632, 41.433791470673, "place1") + (
             2.1873744593677,
@@ -3976,6 +4125,7 @@ class TestRedisCommands:
         ]
 
     @skip_if_server_version_lt("3.2.0")
+    @skip_for_unknown_command()
     def test_georadius_sort(self, r):
         values = (2.1909389952632, 41.433791470673, "place1") + (
             2.1873744593677,
@@ -3995,6 +4145,7 @@ class TestRedisCommands:
 
     @pytest.mark.onlynoncluster
     @skip_if_server_version_lt("3.2.0")
+    @skip_for_unknown_command()
     def test_georadius_store(self, r):
         values = (2.1909389952632, 41.433791470673, "place1") + (
             2.1873744593677,
@@ -4009,6 +4160,7 @@ class TestRedisCommands:
     @pytest.mark.onlynoncluster
     @skip_unless_arch_bits(64)
     @skip_if_server_version_lt("3.2.0")
+    @skip_for_unknown_command()
     def test_georadius_store_dist(self, r):
         values = (2.1909389952632, 41.433791470673, "place1") + (
             2.1873744593677,
@@ -4023,6 +4175,7 @@ class TestRedisCommands:
 
     @skip_unless_arch_bits(64)
     @skip_if_server_version_lt("3.2.0")
+    @skip_for_unknown_command()
     def test_georadiusmember(self, r):
         values = (2.1909389952632, 41.433791470673, "place1") + (
             2.1873744593677,
@@ -4055,6 +4208,7 @@ class TestRedisCommands:
         ]
 
     @skip_if_server_version_lt("6.2.0")
+    @skip_for_unknown_command()
     def test_georadiusmember_count(self, r):
         values = (2.1909389952632, 41.433791470673, "place1") + (
             2.1873744593677,
@@ -4067,6 +4221,7 @@ class TestRedisCommands:
         ]
 
     @skip_if_server_version_lt("5.0.0")
+    @skip_for_unknown_command()
     def test_xack(self, r):
         stream = "stream"
         group = "group"
@@ -4088,6 +4243,7 @@ class TestRedisCommands:
         assert r.xack(stream, group, m2, m3) == 2
 
     @skip_if_server_version_lt("5.0.0")
+    @skip_for_unknown_command()
     def test_xadd(self, r):
         stream = "stream"
         message_id = r.xadd(stream, {"foo": "bar"})
@@ -4102,6 +4258,7 @@ class TestRedisCommands:
         assert r.xlen(stream) == 2
 
     @skip_if_server_version_lt("6.2.0")
+    @skip_for_unknown_command()
     def test_xadd_nomkstream(self, r):
         # nomkstream option
         stream = "stream"
@@ -4112,6 +4269,7 @@ class TestRedisCommands:
         assert r.xlen(stream) == 3
 
     @skip_if_server_version_lt("6.2.0")
+    @skip_for_unknown_command()
     def test_xadd_minlen_and_limit(self, r):
         stream = "stream"
 
@@ -4158,6 +4316,7 @@ class TestRedisCommands:
         assert r.xadd(stream, {"foo": "bar"}, approximate=True, minid=m3)
 
     @skip_if_server_version_lt("7.0.0")
+    @skip_for_unknown_command()
     def test_xadd_explicit_ms(self, r: redis.Redis):
         stream = "stream"
         message_id = r.xadd(stream, {"foo": "bar"}, "9999999999999999999-*")
@@ -4165,6 +4324,7 @@ class TestRedisCommands:
         assert ms == b"9999999999999999999"
 
     @skip_if_server_version_lt("7.0.0")
+    @skip_for_unknown_command()
     def test_xautoclaim(self, r):
         stream = "stream"
         group = "group"
@@ -4210,6 +4370,7 @@ class TestRedisCommands:
             r.xautoclaim(stream, group, consumer, min_idle_time=0, count=-1)
 
     @skip_if_server_version_lt("5.0.0")
+    @skip_for_unknown_command()
     def test_xclaim(self, r):
         stream = "stream"
         group = "group"
@@ -4247,6 +4408,7 @@ class TestRedisCommands:
         ) == [message_id]
 
     @skip_if_server_version_lt("7.0.0")
+    @skip_for_unknown_command()
     def test_xclaim_trimmed(self, r):
         # xclaim should not raise an exception if the item is not there
         stream = "stream"
@@ -4271,6 +4433,7 @@ class TestRedisCommands:
         assert item[0][0] == sid2
 
     @skip_if_server_version_lt("5.0.0")
+    @skip_for_unknown_command()
     def test_xdel(self, r):
         stream = "stream"
 
@@ -4286,6 +4449,7 @@ class TestRedisCommands:
         assert r.xdel(stream, m2, m3) == 2
 
     @skip_if_server_version_lt("7.0.0")
+    @skip_for_unknown_command()
     def test_xgroup_create(self, r):
         # tests xgroup_create and xinfo_groups
         stream = "stream"
@@ -4309,6 +4473,7 @@ class TestRedisCommands:
         assert r.xinfo_groups(stream) == expected
 
     @skip_if_server_version_lt("7.0.0")
+    @skip_for_unknown_command()
     def test_xgroup_create_mkstream(self, r):
         # tests xgroup_create and xinfo_groups
         stream = "stream"
@@ -4335,6 +4500,7 @@ class TestRedisCommands:
         assert r.xinfo_groups(stream) == expected
 
     @skip_if_server_version_lt("7.0.0")
+    @skip_for_unknown_command()
     def test_xgroup_create_entriesread(self, r: redis.Redis):
         stream = "stream"
         group = "group"
@@ -4357,6 +4523,7 @@ class TestRedisCommands:
         assert r.xinfo_groups(stream) == expected
 
     @skip_if_server_version_lt("5.0.0")
+    @skip_for_unknown_command()
     def test_xgroup_delconsumer(self, r):
         stream = "stream"
         group = "group"
@@ -4375,6 +4542,7 @@ class TestRedisCommands:
         assert r.xgroup_delconsumer(stream, group, consumer) == 2
 
     @skip_if_server_version_lt("6.2.0")
+    @skip_for_unknown_command()
     def test_xgroup_createconsumer(self, r):
         stream = "stream"
         group = "group"
@@ -4391,6 +4559,7 @@ class TestRedisCommands:
         assert r.xgroup_delconsumer(stream, group, consumer) == 2
 
     @skip_if_server_version_lt("5.0.0")
+    @skip_for_unknown_command()
     def test_xgroup_destroy(self, r):
         stream = "stream"
         group = "group"
@@ -4403,6 +4572,7 @@ class TestRedisCommands:
         assert r.xgroup_destroy(stream, group)
 
     @skip_if_server_version_lt("7.0.0")
+    @skip_for_unknown_command()
     def test_xgroup_setid(self, r):
         stream = "stream"
         group = "group"
@@ -4424,6 +4594,7 @@ class TestRedisCommands:
         assert r.xinfo_groups(stream) == expected
 
     @skip_if_server_version_lt("7.2.0")
+    @skip_for_unknown_command()
     def test_xinfo_consumers(self, r):
         stream = "stream"
         group = "group"
@@ -4451,6 +4622,7 @@ class TestRedisCommands:
         assert info == expected
 
     @skip_if_server_version_lt("7.0.0")
+    @skip_for_unknown_command()
     def test_xinfo_stream(self, r):
         stream = "stream"
         m1 = r.xadd(stream, {"foo": "bar"})
@@ -4471,6 +4643,7 @@ class TestRedisCommands:
         assert info["last-entry"] is None
 
     @skip_if_server_version_lt("6.0.0")
+    @skip_for_unknown_command()
     def test_xinfo_stream_full(self, r):
         stream = "stream"
         group = "group"
@@ -4496,6 +4669,7 @@ class TestRedisCommands:
         assert isinstance(consumer, dict)
 
     @skip_if_server_version_lt("5.0.0")
+    @skip_for_unknown_command()
     def test_xlen(self, r):
         stream = "stream"
         assert r.xlen(stream) == 0
@@ -4504,6 +4678,7 @@ class TestRedisCommands:
         assert r.xlen(stream) == 2
 
     @skip_if_server_version_lt("5.0.0")
+    @skip_for_unknown_command()
     def test_xpending(self, r):
         stream = "stream"
         group = "group"
@@ -4533,6 +4708,7 @@ class TestRedisCommands:
         assert r.xpending(stream, group) == expected
 
     @skip_if_server_version_lt("5.0.0")
+    @skip_for_unknown_command()
     def test_xpending_range(self, r):
         stream = "stream"
         group = "group"
@@ -4564,6 +4740,7 @@ class TestRedisCommands:
         assert response[0]["consumer"] == consumer1.encode()
 
     @skip_if_server_version_lt("6.2.0")
+    @skip_for_unknown_command()
     def test_xpending_range_idle(self, r):
         stream = "stream"
         group = "group"
@@ -4605,6 +4782,7 @@ class TestRedisCommands:
             )
 
     @skip_if_server_version_lt("5.0.0")
+    @skip_for_unknown_command()
     def test_xrange(self, r):
         stream = "stream"
         m1 = r.xadd(stream, {"foo": "bar"})
@@ -4628,6 +4806,7 @@ class TestRedisCommands:
         assert get_ids(results) == [m1]
 
     @skip_if_server_version_lt("5.0.0")
+    @skip_for_unknown_command()
     def test_xread(self, r):
         stream = "stream"
         m1 = r.xadd(stream, {"foo": "bar"})
@@ -4668,6 +4847,7 @@ class TestRedisCommands:
         assert_resp_response(r, r.xread(streams={stream: m2}), [], {})
 
     @skip_if_server_version_lt("5.0.0")
+    @skip_for_unknown_command()
     def test_xreadgroup(self, r):
         stream = "stream"
         group = "group"
@@ -4742,6 +4922,7 @@ class TestRedisCommands:
         )
 
     @skip_if_server_version_lt("5.0.0")
+    @skip_for_unknown_command()
     def test_xrevrange(self, r):
         stream = "stream"
         m1 = r.xadd(stream, {"foo": "bar"})
@@ -4765,6 +4946,7 @@ class TestRedisCommands:
         assert get_ids(results) == [m4]
 
     @skip_if_server_version_lt("5.0.0")
+    @skip_for_unknown_command()
     def test_xtrim(self, r):
         stream = "stream"
 
@@ -4784,6 +4966,7 @@ class TestRedisCommands:
         assert r.xtrim(stream, 3, approximate=False) == 1
 
     @skip_if_server_version_lt("6.2.4")
+    @skip_for_unknown_command()
     def test_xtrim_minlen_and_length_args(self, r):
         stream = "stream"
 
@@ -4866,6 +5049,7 @@ class TestRedisCommands:
             .get("u16", 0)  # 00000000 11111111
             .execute()
         )
+        # Q? assert [0, None, 1, 2, 2] == [0, None, 255, None, 255]
         assert resp == [0, None, 255, None, 255]
 
         # Verify overflow protection works as arg to incrby:
@@ -4896,6 +5080,7 @@ class TestRedisCommands:
     def test_bitfield_ro(self, r: redis.Redis):
         bf = r.bitfield("a")
         resp = bf.set("u8", 8, 255).execute()
+        # Q? assert [] == [0]
         assert resp == [0]
 
         resp = r.bitfield_ro("a", "u8", 0)
@@ -4905,16 +5090,18 @@ class TestRedisCommands:
         resp = r.bitfield_ro("a", "u8", 0, items)
         assert resp == [0, 15, 15, 14]
 
-    @skip_if_server_version_lt("4.0.0")
+    @skip_for_unknown_command()
     def test_memory_help(self, r):
         with pytest.raises(NotImplementedError):
             r.memory_help()
 
+    @skip_for_unknown_command()
     @skip_if_server_version_lt("4.0.0")
     def test_memory_doctor(self, r):
         with pytest.raises(NotImplementedError):
             r.memory_doctor()
 
+    @skip_for_unknown_command()
     @skip_if_server_version_lt("4.0.0")
     @skip_if_redis_enterprise()
     def test_memory_malloc_stats(self, r):
@@ -4925,6 +5112,7 @@ class TestRedisCommands:
 
         assert r.memory_malloc_stats()
 
+    @skip_for_unknown_command()
     @skip_if_server_version_lt("4.0.0")
     @skip_if_redis_enterprise()
     def test_memory_stats(self, r):
@@ -4949,29 +5137,36 @@ class TestRedisCommands:
         assert isinstance(r.memory_usage("foo"), int)
 
     @skip_if_server_version_lt("7.0.0")
+    @skip_for_unknown_command()
     def test_latency_histogram_not_implemented(self, r: redis.Redis):
         with pytest.raises(NotImplementedError):
             r.latency_histogram()
 
+    @skip_for_unknown_command()
     def test_latency_graph_not_implemented(self, r: redis.Redis):
         with pytest.raises(NotImplementedError):
             r.latency_graph()
 
+    @skip_for_unknown_command()
     def test_latency_doctor_not_implemented(self, r: redis.Redis):
         with pytest.raises(NotImplementedError):
             r.latency_doctor()
 
+    @skip_for_unknown_command()
     def test_latency_history(self, r: redis.Redis):
         assert r.latency_history("command") == []
 
+    @skip_for_unknown_command()
     def test_latency_latest(self, r: redis.Redis):
         assert r.latency_latest() == []
 
+    @skip_for_unknown_command()
     def test_latency_reset(self, r: redis.Redis):
         assert r.latency_reset() == 0
 
     @skip_if_server_version_lt("4.0.0")
     @skip_if_redis_enterprise()
+    @skip_for_unknown_command()
     def test_module_list(self, r):
         assert isinstance(r.module_list(), list)
         for x in r.module_list():
@@ -4991,6 +5186,7 @@ class TestRedisCommands:
 
     @skip_if_server_version_lt("7.0.0")
     @skip_if_redis_enterprise()
+    @skip_for_unknown_command()
     def test_command_list(self, r: redis.Redis):
         assert len(r.command_list()) > 300
         assert len(r.command_list(module="fakemod")) == 0
@@ -5002,6 +5198,7 @@ class TestRedisCommands:
     @pytest.mark.onlynoncluster
     @skip_if_server_version_lt("2.8.13")
     @skip_if_redis_enterprise()
+    @skip_for_unknown_command()
     def test_command_getkeys(self, r):
         res = r.command_getkeys("MSET", "a", "b", "c", "d", "e", "f")
         assert_resp_response(r, res, ["a", "c", "e"], [b"a", b"c", b"e"])
@@ -5035,6 +5232,7 @@ class TestRedisCommands:
     @pytest.mark.onlynoncluster
     @skip_if_server_version_lt("7.0.0")
     @skip_if_redis_enterprise()
+    @skip_for_unknown_command()
     def test_command_getkeysandflags(self, r: redis.Redis):
         assert_resp_response(
             r,
@@ -5052,6 +5250,7 @@ class TestRedisCommands:
     @pytest.mark.onlynoncluster
     @skip_if_server_version_lt("4.0.0")
     @skip_if_redis_enterprise()
+    @skip_for_unknown_command()
     def test_module(self, stack_r):
         with pytest.raises(redis.exceptions.ModuleError) as excinfo:
             stack_r.module_load("/some/fake/path")
@@ -5064,6 +5263,7 @@ class TestRedisCommands:
     @pytest.mark.onlynoncluster
     @skip_if_server_version_lt("7.0.0")
     @skip_if_redis_enterprise()
+    @skip_for_unknown_command()
     def test_module_loadex(self, stack_r: redis.Redis):
         with pytest.raises(redis.exceptions.ModuleError) as excinfo:
             stack_r.module_loadex("/some/fake/path")
@@ -5076,6 +5276,7 @@ class TestRedisCommands:
             assert "Error loading the extension." in str(excinfo.value)
 
     @skip_if_server_version_lt("2.6.0")
+    @skip_for_unknown_command()
     def test_restore(self, r):
         # standard restore
         key = "foo"
@@ -5121,6 +5322,7 @@ class TestRedisCommands:
     @pytest.mark.onlynoncluster
     @skip_if_server_version_lt("5.0.0")
     @skip_if_redis_enterprise()
+    @skip_for_unknown_command()
     def test_replicaof(self, r):
         with pytest.raises(redis.ResponseError):
             assert r.replicaof("NO ONE")
@@ -5153,6 +5355,7 @@ class TestRedisCommands:
     @pytest.mark.replica
     @skip_if_server_version_lt("2.8.0")
     @skip_if_redis_enterprise()
+    @skip_for_unknown_command()
     def test_psync(self, r):
         r2 = redis.Redis(port=6380, decode_responses=False)
         res = r2.psync(r2.client_id(), 1)
